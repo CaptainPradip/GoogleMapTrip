@@ -1,20 +1,44 @@
 package com.example.homework10.models;
 
-public class Trip {
+import com.google.android.gms.maps.model.LatLng;
+
+import java.io.Serializable;
+
+public class Trip implements Serializable {
     public String id;
     public String tripName;
+    public LatLng startingPoint;
+    public LatLng finishPoint;
     public String startedAt;
     public String completedAt;
     public TripStatus tripStatus;
     public double totalTripDistance;
 
-    public Trip(String id, String tripName, String startedAt, String completedAt, TripStatus tripStatus, double totalTripDistance) {
+    public Trip(String id, String tripName, LatLng startingPoint, LatLng finishPoint, String startedAt, String completedAt, TripStatus tripStatus, double totalTripDistance) {
         this.id = id;
         this.tripName = tripName;
+        this.startingPoint = startingPoint;
+        this.finishPoint = finishPoint;
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.tripStatus = tripStatus;
         this.totalTripDistance = totalTripDistance;
+    }
+
+    public LatLng getStartingPoint() {
+        return startingPoint;
+    }
+
+    public void setStartingPoint(LatLng startingPoint) {
+        this.startingPoint = startingPoint;
+    }
+
+    public LatLng getFinishPoint() {
+        return finishPoint;
+    }
+
+    public void setFinishPoint(LatLng finishPoint) {
+        this.finishPoint = finishPoint;
     }
 
     public String getId() {
@@ -70,6 +94,8 @@ public class Trip {
         return "Trip{" +
                 "id='" + id + '\'' +
                 ", tripName='" + tripName + '\'' +
+                ", startingPoint=" + startingPoint +
+                ", finishPoint=" + finishPoint +
                 ", startedAt='" + startedAt + '\'' +
                 ", completedAt='" + completedAt + '\'' +
                 ", tripStatus=" + tripStatus +

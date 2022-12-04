@@ -19,6 +19,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 /*
  * Homework 10
@@ -27,17 +28,19 @@ import com.google.firebase.firestore.FirebaseFirestore;
  * */
 
 public class LoginFragment extends Fragment {
+    FragmentLoginBinding binding;
+    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    LoginListener mListener;
+
     public LoginFragment() {
         // Required empty public constructor
     }
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
-
-    FragmentLoginBinding binding;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -45,9 +48,6 @@ public class LoginFragment extends Fragment {
         binding = FragmentLoginBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
-
-    FirebaseAuth mAuth = FirebaseAuth.getInstance();
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -58,9 +58,9 @@ public class LoginFragment extends Fragment {
             public void onClick(View v) {
                 String email = binding.editTextEmail.getText().toString();
                 String password = binding.editTextPassword.getText().toString();
-                if(email.isEmpty()){
+                if (email.isEmpty()) {
                     MyAlertDialog.show(getContext(), "Error", "Enter valid email!");
-                } else if (password.isEmpty()){
+                } else if (password.isEmpty()) {
                     MyAlertDialog.show(getContext(), "Error", "Enter valid password!");
                 } else {
                     mAuth.signInWithEmailAndPassword(email, password)
@@ -69,19 +69,17 @@ public class LoginFragment extends Fragment {
                                 public void onComplete(@NonNull Task<AuthResult> task) {
                                     if (task.isSuccessful()) {
                                         DocumentReference docRef = db.collection("users").document(mAuth.getCurrentUser().getUid());
-                                        docRef.update("isOnline", true)
-                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                    @Override
-                                                    public void onSuccess(Void unused) {
-                                                        mListener.gotoMyChat();
-                                                    }
-                                                })
-                                                .addOnFailureListener(new OnFailureListener() {
-                                                    @Override
-                                                    public void onFailure(@NonNull Exception e) {
-                                                        MyAlertDialog.show(getContext(), "Error", e.getMessage());
-                                                    }
-                                                });
+                                        docRef.collection("trips").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                                mListener.gotoTrips();
+                                            }
+                                        }).addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                MyAlertDialog.show(getContext(), "Error", e.getMessage());
+                                            }
+                                        });
                                     } else {
                                         MyAlertDialog.show(getContext(), "Login Unsuccessful", task.getException().getMessage());
                                     }
@@ -100,7 +98,6 @@ public class LoginFragment extends Fragment {
         getActivity().setTitle("Login");
     }
 
-    LoginListener mListener;
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -108,7 +105,8 @@ public class LoginFragment extends Fragment {
     }
 
     interface LoginListener {
-        void gotoMyChat();
+        void gotoTrips();
+
         void gotoSignUp();
     }
 }

@@ -3,9 +3,9 @@ package com.example.homework10.models;
 public enum TripStatus {
     OnGoing("On Going"),
     Completed("Completed");
-    private String value;
+    private final String value;
 
-    private TripStatus(String value) {
+    TripStatus(String value) {
         this.value = value;
     }
 }

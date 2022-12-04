@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.homework10.databinding.FragmentSignUpBinding;
+import com.example.homework10.models.Trip;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,12 +26,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /*
- * Homework 08
+ * Homework 10
  * SignUpFragment.java
  * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
  * */
 
 public class SignUpFragment extends Fragment {
+
+    FragmentSignUpBinding binding;
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+    SignUpListener mListener;
 
     public SignUpFragment() {
         // Required empty public constructor
@@ -41,16 +47,11 @@ public class SignUpFragment extends Fragment {
         super.onCreate(savedInstanceState);
     }
 
-    FragmentSignUpBinding binding;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentSignUpBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
-
-    FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -72,11 +73,11 @@ public class SignUpFragment extends Fragment {
                 String email = binding.editTextEmail.getText().toString();
                 String password = binding.editTextPassword.getText().toString();
 
-                if(name.isEmpty()){
+                if (name.isEmpty()) {
                     MyAlertDialog.show(getContext(), "Error", "Enter valid name!");
-                } else if(email.isEmpty()){
+                } else if (email.isEmpty()) {
                     MyAlertDialog.show(getContext(), "Error", "Enter valid email!");
-                } else if (password.isEmpty()){
+                } else if (password.isEmpty()) {
                     MyAlertDialog.show(getContext(), "Error", "Enter valid password!");
                 } else {
                     mAuth.createUserWithEmailAndPassword(email, password)
@@ -98,22 +99,21 @@ public class SignUpFragment extends Fragment {
 
                                         Log.d("demo", "onComplete: " + mAuth.getCurrentUser().getDisplayName());
 
-                                        ArrayList<String> conversations = new ArrayList<>();
+                                        ArrayList<Trip> trips = new ArrayList<>();
                                         HashMap<String, Object> map = new HashMap<>();
                                         map.put("userId", mAuth.getCurrentUser().getUid());
                                         map.put("userName", name);
-                                        map.put("isOnline", true);
-                                        map.put("conversations", conversations);
+                                        map.put("trips", trips);
 
                                         db.collection("users")
                                                 .document(mAuth.getCurrentUser().getUid())
                                                 .set(map)
-                                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                            @Override
-                                                            public void onSuccess(Void unused) {
-                                                                mListener.gotoMyChat();
-                                                            }
-                                                        });
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void unused) {
+                                                        mListener.gotoTrips();
+                                                    }
+                                                });
                                     } else {
                                         MyAlertDialog.show(getContext(), "Sign Up Unsuccessful", task.getException().getMessage());
                                     }
@@ -127,8 +127,6 @@ public class SignUpFragment extends Fragment {
 
     }
 
-    SignUpListener mListener;
-
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -136,7 +134,8 @@ public class SignUpFragment extends Fragment {
     }
 
     interface SignUpListener {
-        void gotoMyChat();
+        void gotoTrips();
+
         void gotoLogin();
     }
 }
