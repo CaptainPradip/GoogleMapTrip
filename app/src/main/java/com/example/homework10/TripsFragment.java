@@ -17,21 +17,14 @@ import com.example.homework10.databinding.FragmentTripsBinding;
 import com.example.homework10.models.Trip;
 import com.example.homework10.models.TripStatus;
 import com.example.homework10.models.User;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -101,10 +94,12 @@ public class TripsFragment extends Fragment {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         trips.clear();
-                        for (QueryDocumentSnapshot documentSnapshot: value) {
+                        for (QueryDocumentSnapshot documentSnapshot : value) {
                             Trip trip = new Trip();
                             trip.setId(documentSnapshot.getString("id"));
                             trip.setUserId(documentSnapshot.getString("userId"));
+                            trip.tripStatus = documentSnapshot.getString("tripStatus").equals(TripStatus.Completed) ?
+                                    TripStatus.Completed : TripStatus.OnGoing;
                             //trip.setStartingPoint((LatLng) documentSnapshot.get("startingPoint"));
                             //trip.setFinishPoint((LatLng) documentSnapshot.get("finishPoint"));
                             trip.setStartedAt(documentSnapshot.getString("startedAt"));
@@ -115,10 +110,10 @@ public class TripsFragment extends Fragment {
                             trips.add(trip);
                         }
 
-                            adapter.notifyDataSetChanged();
+                        adapter.notifyDataSetChanged();
                     }
                 });
-                
+
 
         binding.listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

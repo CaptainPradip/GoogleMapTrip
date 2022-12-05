@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -62,15 +63,6 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
-    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-        }
-    };
-
 
     public CreateTripFragment() {
         // Required empty public constructor
@@ -166,7 +158,18 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                              Bundle savedInstanceState) {
         binding = FragmentCreateTripBinding.inflate(inflater, container, false);
         return binding.getRoot();
-    }
+    }    private LocationCallback mLocationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            Location mLastLocation = locationResult.getLastLocation();
+            Log.d(TAG, "onLocationResult: " + mLastLocation);
+            binding.textViewLoadingStatus.setText("Success");
+            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
+            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+            getDeviceLocation();
+        }
+    };
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -198,6 +201,8 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                     LatLng currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
+                                    binding.textViewLoadingStatus.setText("Success");
+                                    binding.textViewLoadingStatus.setTextColor(Color.GREEN);
                                 } else {
                                     requestNewLocationData();
                                 }
@@ -275,4 +280,8 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     interface CreateTripListener {
         void closeCreateTripFragment();
     }
+
+
+
+
 }
