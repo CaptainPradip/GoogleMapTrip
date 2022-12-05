@@ -42,6 +42,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -78,6 +79,7 @@ public class TripDetailsFragment extends Fragment {
     FragmentTripDetailsBinding binding;
     ActivityResultLauncher<String[]> locationPermissionRequest;
     OkHttpClient client = new OkHttpClient();
+    LatLng currentLocation;
     // TODO: Rename and change types of parameters
     private Trip mTrip;
     // The entry point to the Fused Location Provider.
@@ -156,7 +158,69 @@ public class TripDetailsFragment extends Fragment {
             binding.buttonComplete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    getDeviceLocation();
+                    if (currentLocation != null) {
+                        mTrip.setFinishPoint(currentLocation);
+                        Request request = new Request.Builder()
+                                .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
+                                        "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=AIzaSyBR1j8UNQfUsAaSGeWpEsrXR1adovoB-Mc")
+                                .get()
+                                .build();
+                        client.newCall(request).enqueue(new Callback() {
+                            @Override
+                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+
+                            }
+
+                            @RequiresApi(api = Build.VERSION_CODES.O)
+                            @Override
+                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                Gson gson = new Gson();
+                                APIResponse distanceResp = gson.fromJson(response.body().charStream(), APIResponse.class);
+                                HashMap<String, Object> map = new HashMap<>();
+                                String id = UUID.randomUUID().toString();
+                                map.put("id", id);
+                                map.put("finishPoint", currentLocation);
+                                String totalTripDistance = distanceResp.getRoutes().get(0).legs.get(0).distance.text;
+                                map.put("totalTripDistance", totalTripDistance);
+                                map.put("tripStatus", TripStatus.Completed);
+                                mTrip.tripStatus = TripStatus.Completed;
+                                mTrip.totalTripDistance = totalTripDistance;
+                                LocalDateTime localDateTime = LocalDateTime.now();
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
+                                String dateTime = localDateTime.format(formatter);
+                                map.put("completedAt", dateTime);
+                                mTrip.completedAt = dateTime;
+                                Log.d(TAG, "onResponse: " + mTrip);
+                                db.collection("trips").document(mTrip.getId()).update(map)
+                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @SuppressLint("ResourceAsColor")
+                                            @Override
+                                            public void onSuccess(Void unused) {
+                                                binding.buttonComplete.setVisibility(View.INVISIBLE);
+                                                binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
+
+                                                binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
+                                                binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
+                                                binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
+                                                if (mTrip.tripStatus.equals(TripStatus.OnGoing)) {
+                                                    binding.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+                                                } else {
+                                                    binding.textViewTripStatus.setTextColor(Color.GREEN);
+                                                }
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                MyAlertDialog.show(getContext(), "Error", e.getMessage());
+                                            }
+                                        });
+                            }
+                        });
+
+                    } else {
+
+                    }
                 }
             });
         } else {
@@ -190,67 +254,9 @@ public class TripDetailsFragment extends Fragment {
                                 lastKnownLocation = task.getResult();
                                 if (lastKnownLocation != null) {
 
-                                    LatLng currentLocation = new LatLng(lastKnownLocation.getLatitude(),
+                                    currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
-                                    mTrip.setFinishPoint(currentLocation);
-                                    Request request = new Request.Builder()
-                                            .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
-                                                    "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=AIzaSyBR1j8UNQfUsAaSGeWpEsrXR1adovoB-Mc")
-                                            .get()
-                                            .build();
-                                    client.newCall(request).enqueue(new Callback() {
-                                        @Override
-                                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
-                                        }
-
-                                        @Override
-                                        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                            Gson gson = new Gson();
-                                            APIResponse distanceResp = gson.fromJson(response.body().charStream(), APIResponse.class);
-                                            HashMap<String, Object> map = new HashMap<>();
-                                            String id = UUID.randomUUID().toString();
-                                            map.put("id", id);
-                                            map.put("finishPoint", currentLocation);
-                                            String totalTripDistance = distanceResp.getRoutes().get(0).legs.get(0).distance.text;
-                                            map.put("totalTripDistance", totalTripDistance);
-                                            map.put("tripStatus", TripStatus.Completed);
-                                            mTrip.tripStatus = TripStatus.Completed;
-                                            mTrip.totalTripDistance = totalTripDistance;
-                                            LocalDateTime localDateTime = LocalDateTime.now();
-                                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
-                                            String dateTime = localDateTime.format(formatter);
-                                            map.put("completedAt", dateTime);
-                                            mTrip.completedAt = dateTime;
-                                            Log.d(TAG, "onResponse: " + mTrip);
-                                            db.collection("trips").document(mTrip.getId()).update(map)
-                                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                        @SuppressLint("ResourceAsColor")
-                                                        @Override
-                                                        public void onSuccess(Void unused) {
-                                                            binding.buttonComplete.setVisibility(View.INVISIBLE);
-                                                            binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-
-                                                            binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
-                                                            binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
-                                                            binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
-                                                            if (mTrip.tripStatus.equals(TripStatus.OnGoing)) {
-                                                                binding.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
-                                                            } else {
-                                                                binding.textViewTripStatus.setTextColor(Color.GREEN);
-                                                            }
-                                                        }
-                                                    })
-                                                    .addOnFailureListener(new OnFailureListener() {
-                                                        @Override
-                                                        public void onFailure(@NonNull Exception e) {
-                                                            MyAlertDialog.show(getContext(), "Error", e.getMessage());
-                                                        }
-                                                    });
-                                        }
-                                    });
-
 
                                     // Update Trip Api Fire Base
                                 } else {
@@ -320,6 +326,7 @@ public class TripDetailsFragment extends Fragment {
         // on FusedLocationClient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+
     }
 
 
@@ -339,11 +346,16 @@ public class TripDetailsFragment extends Fragment {
                         //user will see a blue dot in the map at his location
 
                         //move the camera default animation
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mTrip.startingPoint, 8));
+
                         map.addMarker(new MarkerOptions()
                                 .position(mTrip.startingPoint)
                                 .title("start"));
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mTrip.startingPoint, 8));
                         if (mTrip.finishPoint != null) {
+                            LatLngBounds bounds = new LatLngBounds(
+                                    mTrip.startingPoint, // SW bounds
+                                    mTrip.finishPoint  // NE bounds
+                            );
                             map.addMarker(new MarkerOptions()
                                     .position(mTrip.finishPoint)
                                     .title("end"));
@@ -362,7 +374,7 @@ public class TripDetailsFragment extends Fragment {
             Location mLastLocation = locationResult.getLastLocation();
             Log.d(TAG, "onLocationResult: " + mLastLocation);
             fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-            getDeviceLocation();
+            requestNewLocationData();
         }
     };
 
