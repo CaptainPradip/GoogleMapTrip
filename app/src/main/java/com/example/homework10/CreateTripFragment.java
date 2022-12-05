@@ -10,7 +10,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -28,15 +27,15 @@ import androidx.fragment.app.Fragment;
 
 import com.example.homework10.databinding.FragmentCreateTripBinding;
 import com.example.homework10.models.TripStatus;
+import com.google.android.gms.location.CurrentLocationRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.Granularity;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -64,20 +63,10 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
+
     public CreateTripFragment() {
         // Required empty public constructor
-    }    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            binding.textViewLoadingStatus.setText("Success");
-            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
-            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-            getDeviceLocation();
-        }
-    };
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
@@ -92,8 +81,12 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                     Manifest.permission.ACCESS_COARSE_LOCATION, false);
                             if (fineLocationGranted != null && fineLocationGranted) {
                                 // Precise location access granted.
+                                locationPermissionGranted = true;
+                                getDeviceLocation();
                             } else if (coarseLocationGranted != null && coarseLocationGranted) {
                                 // Only approximate location access granted.
+                                locationPermissionGranted = true;
+                                getDeviceLocation();
                             } else {
                                 // No location access granted.
                             }
@@ -180,8 +173,15 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
         try {
             if (locationPermissionGranted) {
                 if (isLocationEnabled()) {
-                    Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-                    locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
+                    CurrentLocationRequest currentLocationRequest = new CurrentLocationRequest.Builder()
+                            .setGranularity(Granularity.GRANULARITY_FINE).
+                            setPriority(Priority.PRIORITY_HIGH_ACCURACY).
+                            setDurationMillis(5000)
+                            .setMaxUpdateAgeMillis(10000).build();
+                    CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+                    // on FusedLocationClient
+                    fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+                    fusedLocationProviderClient.getCurrentLocation(currentLocationRequest, cancellationTokenSource.getToken()).addOnCompleteListener(new OnCompleteListener<Location>() {
                         @Override
                         public void onComplete(@NonNull Task<Location> task) {
                             if (task.isSuccessful()) {
@@ -194,8 +194,6 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                     Log.d(TAG, "onComplete: " + currentLocation);
                                     binding.textViewLoadingStatus.setText("Success");
                                     binding.textViewLoadingStatus.setTextColor(Color.GREEN);
-                                } else {
-                                    requestNewLocationData();
                                 }
                             } else {
                                 Log.d(TAG, "Current location is null. Using defaults.");
@@ -211,7 +209,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
 
             } else {
                 getLocationPermission();
-                getDeviceLocation();
+
             }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage(), e);
@@ -233,6 +231,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                 android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true;
+            getDeviceLocation();
         } else {
             locationPermissionRequest.launch(new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -248,20 +247,6 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
-    @SuppressLint("MissingPermission")
-    private void requestNewLocationData() {
-
-        // Initializing LocationRequest
-        // object with appropriate methods
-        LocationRequest mLocationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
-                .setWaitForAccurateLocation(false)
-                .setMinUpdateIntervalMillis(3000)
-                .setMaxUpdateDelayMillis(100)
-                .build();
-        // on FusedLocationClient
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
-        fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-    }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -271,8 +256,6 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     interface CreateTripListener {
         void closeCreateTripFragment();
     }
-
-
 
 
 }

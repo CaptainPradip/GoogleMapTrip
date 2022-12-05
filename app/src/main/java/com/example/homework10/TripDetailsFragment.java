@@ -10,7 +10,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,10 +29,9 @@ import com.example.homework10.databinding.FragmentTripDetailsBinding;
 import com.example.homework10.models.APIResponse;
 import com.example.homework10.models.Trip;
 import com.example.homework10.models.TripStatus;
+import com.google.android.gms.location.CurrentLocationRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.Granularity;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -44,6 +42,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -118,12 +117,14 @@ public class TripDetailsFragment extends Fragment {
                             if (fineLocationGranted != null && fineLocationGranted || coarseLocationGranted != null && coarseLocationGranted) {
                                 // Precise location access granted.
                                 locationPermissionGranted = true;
+                                getDeviceLocation();
                             } else {
                                 // No location access granted.
                             }
                         }
                 );
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        getLocationPermission();
     }
 
     @Override
@@ -138,7 +139,6 @@ public class TripDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         getActivity().setTitle("TripDetailsFragment");
-        requestNewLocationData();
         Log.d(TAG, "onResponse: " + mTrip);
         binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
         binding.textViewStartedAt.setText(mTrip.startedAt);
@@ -150,7 +150,7 @@ public class TripDetailsFragment extends Fragment {
             binding.textViewTripStatus.setTextColor(Color.GREEN);
         }
         binding.textViewTripStatus.setText(mTrip.tripStatus.name());
-        binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance + " Miles");
+        binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
         if (!mTrip.tripStatus.equals(TripStatus.Completed)) {
             binding.buttonComplete.setVisibility(View.VISIBLE);
             binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
@@ -159,7 +159,6 @@ public class TripDetailsFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     if (currentLocation != null) {
-                        fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
                         mTrip.setFinishPoint(currentLocation);
                         Request request = new Request.Builder()
                                 .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
@@ -199,7 +198,6 @@ public class TripDetailsFragment extends Fragment {
                                             public void onSuccess(Void unused) {
                                                 binding.buttonComplete.setVisibility(View.INVISIBLE);
                                                 binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-
                                                 binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
                                                 binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
                                                 binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
@@ -208,6 +206,7 @@ public class TripDetailsFragment extends Fragment {
                                                 } else {
                                                     binding.textViewTripStatus.setTextColor(Color.GREEN);
                                                 }
+                                                setMap();
                                             }
                                         })
                                         .addOnFailureListener(new OnFailureListener() {
@@ -245,9 +244,15 @@ public class TripDetailsFragment extends Fragment {
         try {
             if (locationPermissionGranted) {
                 if (isLocationEnabled()) {
-                    Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-                    locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
-                        @RequiresApi(api = Build.VERSION_CODES.O)
+                    CurrentLocationRequest currentLocationRequest = new CurrentLocationRequest.Builder()
+                            .setGranularity(Granularity.GRANULARITY_FINE).
+                            setPriority(Priority.PRIORITY_HIGH_ACCURACY).
+                            setDurationMillis(5000)
+                            .setMaxUpdateAgeMillis(10000).build();
+                    CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+                    // on FusedLocationClient
+                    fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+                    fusedLocationProviderClient.getCurrentLocation(currentLocationRequest, cancellationTokenSource.getToken()).addOnCompleteListener(new OnCompleteListener<Location>() {
                         @Override
                         public void onComplete(@NonNull Task<Location> task) {
                             if (task.isSuccessful()) {
@@ -258,10 +263,6 @@ public class TripDetailsFragment extends Fragment {
                                     currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
-
-                                    // Update Trip Api Fire Base
-                                } else {
-                                    requestNewLocationData();
                                 }
                             } else {
                                 Log.d(TAG, "Current location is null. Using defaults.");
@@ -275,9 +276,6 @@ public class TripDetailsFragment extends Fragment {
                     startActivity(intent);
                 }
 
-            } else {
-                getLocationPermission();
-                getDeviceLocation();
             }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage(), e);
@@ -299,6 +297,7 @@ public class TripDetailsFragment extends Fragment {
                 android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true;
+            getDeviceLocation();
         } else {
             locationPermissionRequest.launch(new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -313,30 +312,6 @@ public class TripDetailsFragment extends Fragment {
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
-
-    @SuppressLint("MissingPermission")
-    private void requestNewLocationData() {
-
-        // Initializing LocationRequest
-        // object with appropriate methods
-        LocationRequest mLocationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
-                .setWaitForAccurateLocation(false)
-                .setMinUpdateIntervalMillis(3000)
-                .setMaxUpdateDelayMillis(100)
-                .build();
-        // on FusedLocationClient
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
-        fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-
-    }    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-        }
-    };
 
     public void setMap() {
         MapView mapView = (MapView) binding.getRoot().findViewById(R.id.mapView);
@@ -364,20 +339,14 @@ public class TripDetailsFragment extends Fragment {
                                     .position(mTrip.startingPoint)
                                     .title("start"));
 
-                            double maxLong = Math.max(mTrip.startingPoint.longitude, mTrip.finishPoint.longitude);
-                            double minLong = Math.min(mTrip.startingPoint.longitude, mTrip.finishPoint.longitude);
-
-                            double maxLat = Math.max(mTrip.startingPoint.latitude, mTrip.finishPoint.latitude);
-                            double minLat = Math.min(mTrip.startingPoint.latitude, mTrip.finishPoint.latitude);
-                            LatLngBounds bounds = new LatLngBounds(
-                                    new LatLng(minLat, minLong), // SW bounds
-                                    new LatLng(maxLat, maxLong)  // NE bounds
-                            );
+                            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                            builder.include(mTrip.finishPoint);
+                            builder.include(mTrip.startingPoint);
 
                             map.addMarker(new MarkerOptions()
                                     .position(mTrip.finishPoint)
                                     .title("end"));
-                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 8));
+                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 100));
                         }
 
 
@@ -385,8 +354,4 @@ public class TripDetailsFragment extends Fragment {
                 }
         );
     }
-
-
-
-
 }

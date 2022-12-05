@@ -107,7 +107,7 @@ public class TripsFragment extends Fragment {
                             LatLng startingPoint = new LatLng(map.get("latitude"), map.get("longitude"));
                             trip.setStartingPoint(startingPoint);
                             if (documentSnapshot.get("finishPoint") != null) {
-                                HashMap<String, Double> map1 = (HashMap<String, Double>) documentSnapshot.get("startingPoint");
+                                HashMap<String, Double> map1 = (HashMap<String, Double>) documentSnapshot.get("finishPoint");
                                 LatLng finishPoint = new LatLng(map1.get("latitude"), map1.get("longitude"));
                                 trip.setFinishPoint((LatLng) finishPoint);
                             }
