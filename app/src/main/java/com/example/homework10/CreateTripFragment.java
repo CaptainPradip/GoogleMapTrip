@@ -63,6 +63,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
+    LatLng currentLocation;
 
     public CreateTripFragment() {
         // Required empty public constructor
@@ -112,8 +113,8 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                     HashMap<String, Object> map = new HashMap<>();
                     String id = UUID.randomUUID().toString();
                     map.put("tripName", tripName);
-                    // public LatLng startingPoint;
-                    // public LatLng finishPoint;
+                    map.put("startingPoint", currentLocation);
+                    map.put("finishPoint", null);
                     map.put("id", id);
                     map.put("totalTripDistance", 0);
                     map.put("userId", mAuth.getCurrentUser().getUid());
@@ -198,7 +199,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                 lastKnownLocation = task.getResult();
                                 if (lastKnownLocation != null) {
 
-                                    LatLng currentLocation = new LatLng(lastKnownLocation.getLatitude(),
+                                    currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
                                     binding.textViewLoadingStatus.setText("Success");
