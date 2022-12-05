@@ -103,7 +103,6 @@ public class SignUpFragment extends Fragment {
                                         HashMap<String, Object> map = new HashMap<>();
                                         map.put("userId", mAuth.getCurrentUser().getUid());
                                         map.put("userName", name);
-                                        map.put("trips", trips);
 
                                         db.collection("users")
                                                 .document(mAuth.getCurrentUser().getUid())

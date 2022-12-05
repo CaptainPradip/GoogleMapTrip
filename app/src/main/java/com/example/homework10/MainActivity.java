@@ -75,8 +75,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void closeCreateTripFragment() {
-        getSupportFragmentManager().beginTransaction()
-                .addToBackStack(null)
-                .commit();
+        getSupportFragmentManager().popBackStack();
     }
 }
