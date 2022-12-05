@@ -2,6 +2,12 @@ package com.example.homework10.models;
 
 import java.util.ArrayList;
 
+/*
+ * Homework 10
+ * APIResponse.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
+
 public class APIResponse {
     public ArrayList<Route> routes;
     public String status;

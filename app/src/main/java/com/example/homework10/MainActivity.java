@@ -10,6 +10,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.firebase.auth.FirebaseAuth;
 
+/*
+ * Homework 10
+ * MainActivity.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
+
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
         LoginFragment.LoginListener, TripsFragment.TripsListener, CreateTripFragment.CreateTripListener, SignUpFragment.SignUpListener {
 

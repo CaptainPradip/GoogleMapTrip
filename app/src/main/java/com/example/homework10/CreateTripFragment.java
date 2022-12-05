@@ -48,8 +48,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.UUID;
 
+/*
+ * Homework 10
+ * CreateTripFragment.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
 
-public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
+public class CreateTripFragment extends Fragment {
     private static final String TAG = "CreateTripFragment";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -95,8 +100,6 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         getLocationPermission();
         getDeviceLocation();
-
-
     }
 
     @Override
@@ -110,38 +113,41 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
             public void onClick(View view) {
                 String tripName = binding.editTextTripName.getText().toString();
 
-                if (tripName.isEmpty()) {
-                    MyAlertDialog.show(getContext(), "Error", "Please enter all the fields");
+                if (currentLocation == null) {
+                    Toast.makeText(getContext(), "Loading location", Toast.LENGTH_SHORT).show();
                 } else {
-                    HashMap<String, Object> map = new HashMap<>();
-                    String id = UUID.randomUUID().toString();
-                    map.put("tripName", tripName);
-                    map.put("startingPoint", currentLocation);
-                    map.put("finishPoint", null);
-                    map.put("id", id);
-                    map.put("totalTripDistance", "0 Miles");
-                    map.put("userId", mAuth.getCurrentUser().getUid());
-                    map.put("completedAt", "");
-                    map.put("tripStatus", TripStatus.OnGoing);
-                    LocalDateTime localDateTime = LocalDateTime.now();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
-                    String dateTime = localDateTime.format(formatter);
-                    map.put("startedAt", dateTime);
-                    db.collection("trips").document(id)
-                            .set(map)
-                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void unused) {
-                                    mListener.closeCreateTripFragment();
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    MyAlertDialog.show(getContext(), "Error", e.getMessage());
-                                }
-                            });
-
+                    if (tripName.isEmpty()) {
+                        MyAlertDialog.show(getContext(), "Error", "Please enter all the fields");
+                    } else {
+                        HashMap<String, Object> map = new HashMap<>();
+                        String id = UUID.randomUUID().toString();
+                        map.put("tripName", tripName);
+                        map.put("startingPoint", currentLocation);
+                        map.put("finishPoint", null);
+                        map.put("id", id);
+                        map.put("totalTripDistance", "0 Miles");
+                        map.put("userId", mAuth.getCurrentUser().getUid());
+                        map.put("completedAt", "");
+                        map.put("tripStatus", TripStatus.OnGoing);
+                        LocalDateTime localDateTime = LocalDateTime.now();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
+                        String dateTime = localDateTime.format(formatter);
+                        map.put("startedAt", dateTime);
+                        db.collection("trips").document(id)
+                                .set(map)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void unused) {
+                                        mListener.closeCreateTripFragment();
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        MyAlertDialog.show(getContext(), "Error", e.getMessage());
+                                    }
+                                });
+                    }
                 }
             }
         });
@@ -247,15 +253,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
-
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-
-    }
-
     interface CreateTripListener {
         void closeCreateTripFragment();
     }
-
-
 }

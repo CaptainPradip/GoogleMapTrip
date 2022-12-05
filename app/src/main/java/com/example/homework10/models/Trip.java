@@ -4,6 +4,12 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.io.Serializable;
 
+/*
+ * Homework 10
+ * Trip.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
+
 public class Trip implements Serializable {
     public String id;
     public String userId;

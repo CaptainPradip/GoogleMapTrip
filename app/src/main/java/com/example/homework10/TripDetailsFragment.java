@@ -63,15 +63,15 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link TripDetailsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+/*
+ * Homework 10
+ * TripDetailsFragment.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
+
 public class TripDetailsFragment extends Fragment {
     private static final String TAG = "TripDetailsFragment";
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
     private static final String ARG_PARAM1 = "param1";
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -79,7 +79,6 @@ public class TripDetailsFragment extends Fragment {
     ActivityResultLauncher<String[]> locationPermissionRequest;
     OkHttpClient client = new OkHttpClient();
     LatLng currentLocation;
-    // TODO: Rename and change types of parameters
     private Trip mTrip;
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -137,7 +136,7 @@ public class TripDetailsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        getActivity().setTitle("TripDetailsFragment");
+        getActivity().setTitle("Trip Details");
         Log.d(TAG, "onResponse: " + mTrip);
         binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
         binding.textViewStartedAt.setText(mTrip.startedAt);
@@ -145,6 +144,7 @@ public class TripDetailsFragment extends Fragment {
         binding.textViewTripStatus.setText(mTrip.tripStatus.name());
         if (mTrip.tripStatus.equals(TripStatus.OnGoing)) {
             binding.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+            binding.textViewCompletedAt.setText("N/A");
         } else {
             binding.textViewTripStatus.setTextColor(Color.GREEN);
         }
@@ -164,14 +164,16 @@ public class TripDetailsFragment extends Fragment {
             binding.buttonComplete.setVisibility(View.INVISIBLE);
             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
             binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
-            binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
+            String[] temp = mTrip.totalTripDistance.split("\\s");
+            if (temp[1].equals("mi"))
+                binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance.split("\\s")[0] + " Miles");
+            else
+                binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance.split("\\s")[0] + " ft");
         }
         setMap();
     }
 
-    /**
-     * Gets the current location of the device, and positions the map's camera.
-     */
+
     @SuppressLint("MissingPermission")
     private void getDeviceLocation() {
         /*
@@ -329,21 +331,19 @@ public class TripDetailsFragment extends Fragment {
                                 .title("start"));
 
                         if (mTrip.finishPoint != null) {
-                            map.addMarker(new MarkerOptions()
+                            /*map.addMarker(new MarkerOptions()
                                     .position(mTrip.startingPoint)
-                                    .title("start"));
+                                    .title("start"));*/
 
                             LatLngBounds.Builder builder = new LatLngBounds.Builder();
                             builder.include(mTrip.finishPoint);
                             builder.include(mTrip.startingPoint);
-
                             map.addMarker(new MarkerOptions()
                                     .position(mTrip.finishPoint)
                                     .title("end"));
                             map.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 100));
-                        }
-
-
+                        } else
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(mTrip.startingPoint, 15));
                     }
                 }
         );

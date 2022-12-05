@@ -1,5 +1,11 @@
 package com.example.homework10.models;
 
+/*
+ * Homework 10
+ * EndLocation.java
+ * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
+ * */
+
 public class EndLocation {
     public double lat;
     public double lng;

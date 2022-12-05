@@ -21,7 +21,7 @@ import java.util.List;
 
 /*
  * Homework 10
- * MyChatsListViewAdapter.java
+ * TripsListViewAdapter.java
  * Authors: 1) Sudhanshu Dalvi, 2) Pradip Nemane
  * */
 
@@ -59,17 +59,24 @@ public class TripsListViewAdapter extends ArrayAdapter<Trip> {
         viewHolder.textViewTripName.setText(trip.tripName);
         viewHolder.textViewStartedAt.setText(trip.startedAt);
 
+
+        viewHolder.textViewTripStatus.setText(trip.tripStatus.name());
+
         if (trip.tripStatus.equals(TripStatus.OnGoing)) {
             viewHolder.textViewCompletedAt.setText("N/A");
             viewHolder.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+            viewHolder.textViewTotalTripDistance.setVisibility(View.INVISIBLE);
         } else {
             viewHolder.textViewCompletedAt.setText(trip.completedAt);
             viewHolder.textViewTripStatus.setTextColor(Color.GREEN);
+            String[] temp = trip.totalTripDistance.split("\\s");
+            if (temp[1].equals("mi")) {
+                viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance.split("\\s")[0] + " Miles");
+            }
+            else {
+                viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance.split("\\s")[0] + " ft");
+            }
         }
-        viewHolder.textViewTripStatus.setText(trip.tripStatus.name());
-        viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance);
-
-
         return convertView;
     }
 

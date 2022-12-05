@@ -134,7 +134,6 @@ public class SignUpFragment extends Fragment {
 
     interface SignUpListener {
         void gotoTrips();
-
         void gotoLogin();
     }
 }
