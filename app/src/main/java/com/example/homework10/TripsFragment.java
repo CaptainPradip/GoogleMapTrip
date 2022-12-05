@@ -15,13 +15,17 @@ import androidx.fragment.app.Fragment;
 import com.example.homework10.adaptors.TripsListViewAdapter;
 import com.example.homework10.databinding.FragmentTripsBinding;
 import com.example.homework10.models.Trip;
+import com.example.homework10.models.TripStatus;
 import com.example.homework10.models.User;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -91,41 +95,30 @@ public class TripsFragment extends Fragment {
         adapter = new TripsListViewAdapter(getActivity(), R.layout.trip_list_item, trips,
                 mAuth.getCurrentUser().getUid());
         binding.listView.setAdapter(adapter);
-        db.collection("users")
-                .document(mAuth.getCurrentUser().getUid())
-                .addSnapshotListener(new EventListener<DocumentSnapshot>() {
+        db.collection("trips")
+                .whereEqualTo("userId", mAuth.getCurrentUser().getUid())
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                        mUser = new User();
-                        mUser.setUserId(value.getString("userId"));
-                        mUser.setUserName(value.getString("userName"));
-                        mUser.setTrips((ArrayList<Trip>) value.get("trips"));
+                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         trips.clear();
-                        Log.d(TAG, "onEvent: " + mUser);
-                        if (mUser.getTrips().size() != 0) {
-                            CollectionReference ref = db.collection("users").document().collection("trips");
-                            trips = mUser.getTrips();
-                            adapter.sort(new Comparator<Trip>() {
-                                @Override
-                                public int compare(Trip trip, Trip t1) {
-                                    String startedAt = trip.getStartedAt();
-                                    String t1StartedAt = t1.getStartedAt();
-                                    SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-                                    try {
-                                        Date startedAtDate = formatter.parse(startedAt);
-                                        Date t1StartedAtDate = formatter.parse(t1StartedAt);
-                                        return startedAtDate.compareTo(t1StartedAtDate) * -1;
-                                    } catch (ParseException e) {
-                                        e.printStackTrace();
+                        for (QueryDocumentSnapshot documentSnapshot: value) {
+                            Trip trip = new Trip();
+                            trip.setId(documentSnapshot.getString("id"));
+                            trip.setUserId(documentSnapshot.getString("userId"));
+                            //trip.setStartingPoint((LatLng) documentSnapshot.get("startingPoint"));
+                            //trip.setFinishPoint((LatLng) documentSnapshot.get("finishPoint"));
+                            trip.setStartedAt(documentSnapshot.getString("startedAt"));
+                            trip.setCompletedAt(documentSnapshot.getString("completedAt"));
+                            trip.setTripName(documentSnapshot.getString("tripName"));
+                            //trip.setTotalTripDistance(documentSnapshot.getDouble("totalTripDistance"));
 
-                                    }
-                                    return 0;
-                                }
-                            });
-                            adapter.notifyDataSetChanged();
+                            trips.add(trip);
                         }
+
+                            adapter.notifyDataSetChanged();
                     }
                 });
+                
 
         binding.listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

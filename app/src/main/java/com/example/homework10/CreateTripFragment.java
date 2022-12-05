@@ -37,6 +37,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -122,15 +124,28 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                     // public LatLng finishPoint;
                     map.put("id", id);
                     map.put("totalTripDistance", 0);
+                    map.put("userId", mAuth.getCurrentUser().getUid());
                     map.put("completedAt", "");
                     map.put("tripStatus", TripStatus.OnGoing);
                     LocalDateTime localDateTime = LocalDateTime.now();
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
                     String dateTime = localDateTime.format(formatter);
                     map.put("startedAt", dateTime);
-                    db.collection("users").document(mAuth.getCurrentUser().getUid()).collection("trips").document(id)
+                    db.collection("trips").document(id)
                             .set(map)
-                            .addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void unused) {
+                                    mListener.closeCreateTripFragment();
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    MyAlertDialog.show(getContext(), "Error", e.getMessage());
+                                }
+                            });
+                            /*.addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     if (task.isSuccessful()) {
@@ -139,7 +154,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                         MyAlertDialog.show(getContext(), "Error", task.getException().getMessage());
                                     }
                                 }
-                            });
+                            });*/
                 }
             }
         });

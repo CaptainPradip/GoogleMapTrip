@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class User implements Serializable {
     String userId;
     String userName;
-    ArrayList<Trip> trips;
+    ArrayList<Trip> trips = new ArrayList<>();
 
     public User() {
     }

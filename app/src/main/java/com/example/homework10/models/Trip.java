@@ -6,6 +6,7 @@ import java.io.Serializable;
 
 public class Trip implements Serializable {
     public String id;
+    public String userId;
     public String tripName;
     public LatLng startingPoint;
     public LatLng finishPoint;
@@ -13,6 +14,17 @@ public class Trip implements Serializable {
     public String completedAt;
     public TripStatus tripStatus;
     public double totalTripDistance;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public Trip() {
+    }
 
     public Trip(String id, String tripName, LatLng startingPoint, LatLng finishPoint, String startedAt, String completedAt, TripStatus tripStatus, double totalTripDistance) {
         this.id = id;
