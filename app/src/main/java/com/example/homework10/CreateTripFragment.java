@@ -64,10 +64,20 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
-
     public CreateTripFragment() {
         // Required empty public constructor
-    }
+    }    private LocationCallback mLocationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            Location mLastLocation = locationResult.getLastLocation();
+            Log.d(TAG, "onLocationResult: " + mLastLocation);
+            binding.textViewLoadingStatus.setText("Success");
+            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
+            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+            getDeviceLocation();
+        }
+    };
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
@@ -236,18 +246,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private boolean isLocationEnabled() {
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-    }    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            binding.textViewLoadingStatus.setText("Success");
-            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
-            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-            getDeviceLocation();
-        }
-    };
+    }
 
     @SuppressLint("MissingPermission")
     private void requestNewLocationData() {

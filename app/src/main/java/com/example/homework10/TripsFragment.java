@@ -100,16 +100,22 @@ public class TripsFragment extends Fragment {
                             Trip trip = new Trip();
                             trip.setId(documentSnapshot.getString("id"));
                             trip.setUserId(documentSnapshot.getString("userId"));
-                            trip.tripStatus = documentSnapshot.getString("tripStatus").equals(TripStatus.Completed) ?
+                            trip.tripStatus = documentSnapshot.getString("tripStatus").equals(TripStatus.Completed.toString()
+                            ) ?
                                     TripStatus.Completed : TripStatus.OnGoing;
                             HashMap<String, Double> map = (HashMap<String, Double>) documentSnapshot.get("startingPoint");
                             LatLng startingPoint = new LatLng(map.get("latitude"), map.get("longitude"));
                             trip.setStartingPoint(startingPoint);
-                            trip.setFinishPoint((LatLng) documentSnapshot.get("finishPoint"));
+                            if (documentSnapshot.get("finishPoint") != null) {
+                                HashMap<String, Double> map1 = (HashMap<String, Double>) documentSnapshot.get("startingPoint");
+                                LatLng finishPoint = new LatLng(map1.get("latitude"), map1.get("longitude"));
+                                trip.setFinishPoint((LatLng) finishPoint);
+                            }
+
                             trip.setStartedAt(documentSnapshot.getString("startedAt"));
                             trip.setCompletedAt(documentSnapshot.getString("completedAt"));
                             trip.setTripName(documentSnapshot.getString("tripName"));
-                            trip.setTotalTripDistance(documentSnapshot.getDouble("totalTripDistance"));
+                            trip.setTotalTripDistance(documentSnapshot.getString("totalTripDistance"));
 
                             trips.add(trip);
                         }

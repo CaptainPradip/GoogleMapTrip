@@ -78,20 +78,10 @@ public class TripDetailsFragment extends Fragment {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
-    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            // Update Trip Fire Base
-        }
-    };
 
     public TripDetailsFragment() {
         // Required empty public constructor
     }
-
 
     // TODO: Rename and change types and number of parameters
     public static TripDetailsFragment newInstance(Trip trip) {
@@ -147,6 +137,7 @@ public class TripDetailsFragment extends Fragment {
         if (!mTrip.tripStatus.equals(TripStatus.Completed)) {
             binding.buttonComplete.setVisibility(View.VISIBLE);
             binding.textViewTripStatus.setTextColor(Color.YELLOW);
+            binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
             binding.textViewTotalTripDistance.setVisibility(View.INVISIBLE);
             binding.buttonComplete.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -158,7 +149,8 @@ public class TripDetailsFragment extends Fragment {
             binding.buttonComplete.setVisibility(View.INVISIBLE);
             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
             binding.textViewTripStatus.setTextColor(R.color.warning);
-            binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance + " Miles");
+            binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
+            binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
         }
     }
 
@@ -187,7 +179,7 @@ public class TripDetailsFragment extends Fragment {
                                     LatLng currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
-
+                                    mTrip.setFinishPoint(currentLocation);
                                     Request request = new Request.Builder()
                                             .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
                                                     "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=AIzaSyBR1j8UNQfUsAaSGeWpEsrXR1adovoB-Mc")
@@ -203,27 +195,32 @@ public class TripDetailsFragment extends Fragment {
                                         public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                                             Gson gson = new Gson();
                                             APIResponse distanceResp = gson.fromJson(response.body().charStream(), APIResponse.class);
-
-
                                             HashMap<String, Object> map = new HashMap<>();
                                             String id = UUID.randomUUID().toString();
-
-                                            // public LatLng startingPoint;
-                                            // public LatLng finishPoint;
                                             map.put("id", id);
                                             map.put("finishPoint", currentLocation);
-                                            map.put("totalTripDistance", distanceResp.getRoutes().get(0).legs.get(0).distance.text);
+                                            String totalTripDistance = distanceResp.getRoutes().get(0).legs.get(0).distance.text;
+                                            map.put("totalTripDistance", totalTripDistance);
                                             map.put("tripStatus", TripStatus.Completed);
+                                            mTrip.tripStatus = TripStatus.Completed;
+                                            mTrip.totalTripDistance = totalTripDistance;
                                             LocalDateTime localDateTime = LocalDateTime.now();
                                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
                                             String dateTime = localDateTime.format(formatter);
                                             map.put("completedAt", dateTime);
+                                            mTrip.completedAt = dateTime;
                                             Log.d(TAG, "onResponse: " + mTrip);
                                             db.collection("trips").document(mTrip.getId()).update(map)
                                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                        @SuppressLint("ResourceAsColor")
                                                         @Override
                                                         public void onSuccess(Void unused) {
-
+                                                            binding.buttonComplete.setVisibility(View.INVISIBLE);
+                                                            binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
+                                                            binding.textViewTripStatus.setTextColor(R.color.warning);
+                                                            binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
+                                                            binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
+                                                            binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
                                                         }
                                                     })
                                                     .addOnFailureListener(new OnFailureListener() {
@@ -305,5 +302,17 @@ public class TripDetailsFragment extends Fragment {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
     }
+
+    private LocationCallback mLocationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            Location mLastLocation = locationResult.getLastLocation();
+            Log.d(TAG, "onLocationResult: " + mLastLocation);
+            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+            getDeviceLocation();
+        }
+    };
+
 
 }
