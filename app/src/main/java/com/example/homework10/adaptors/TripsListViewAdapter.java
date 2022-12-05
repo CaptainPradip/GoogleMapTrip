@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import com.example.homework10.R;
 import com.example.homework10.models.Trip;
+import com.example.homework10.models.TripStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,11 @@ public class TripsListViewAdapter extends ArrayAdapter<Trip> {
 
         viewHolder.textViewTripName.setText(trip.tripName);
         viewHolder.textViewStartedAt.setText(trip.startedAt);
-        viewHolder.textViewCompletedAt.setText(trip.completedAt);
+
+        if (trip.tripStatus.equals(TripStatus.OnGoing))
+            viewHolder.textViewCompletedAt.setText("N/A");
+        else
+            viewHolder.textViewCompletedAt.setText(trip.completedAt);
         viewHolder.textViewTripStatus.setText(trip.tripStatus.name());
         viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance + " Miles");
 
