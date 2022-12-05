@@ -1,6 +1,7 @@
 package com.example.homework10.adaptors;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,9 +59,13 @@ public class TripsListViewAdapter extends ArrayAdapter<Trip> {
         viewHolder.textViewTripName.setText(trip.tripName);
         viewHolder.textViewStartedAt.setText(trip.startedAt);
 
-        if (trip.tripStatus.equals(TripStatus.OnGoing))
+        if (trip.tripStatus.equals(TripStatus.OnGoing)) {
             viewHolder.textViewCompletedAt.setText("N/A");
-        else viewHolder.textViewCompletedAt.setText(trip.completedAt);
+            viewHolder.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+        } else {
+            viewHolder.textViewCompletedAt.setText(trip.completedAt);
+            viewHolder.textViewTripStatus.setTextColor(Color.GREEN);
+        }
         viewHolder.textViewTripStatus.setText(trip.tripStatus.name());
         viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance);
 

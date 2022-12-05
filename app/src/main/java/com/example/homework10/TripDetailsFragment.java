@@ -36,7 +36,13 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -96,6 +102,7 @@ public class TripDetailsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (getArguments() != null) {
             mTrip = (Trip) getArguments().getSerializable(ARG_PARAM1);
         }
@@ -129,14 +136,21 @@ public class TripDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         getActivity().setTitle("TripDetailsFragment");
+        requestNewLocationData();
         Log.d(TAG, "onResponse: " + mTrip);
         binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
         binding.textViewStartedAt.setText(mTrip.startedAt);
         binding.textViewTripName.setText(mTrip.tripName);
         binding.textViewTripStatus.setText(mTrip.tripStatus.name());
+        if (mTrip.tripStatus.equals(TripStatus.OnGoing)) {
+            binding.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+        } else {
+            binding.textViewTripStatus.setTextColor(Color.GREEN);
+        }
+        binding.textViewTripStatus.setText(mTrip.tripStatus.name());
+        binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance + " Miles");
         if (!mTrip.tripStatus.equals(TripStatus.Completed)) {
             binding.buttonComplete.setVisibility(View.VISIBLE);
-            binding.textViewTripStatus.setTextColor(Color.YELLOW);
             binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
             binding.textViewTotalTripDistance.setVisibility(View.INVISIBLE);
             binding.buttonComplete.setOnClickListener(new View.OnClickListener() {
@@ -148,10 +162,10 @@ public class TripDetailsFragment extends Fragment {
         } else {
             binding.buttonComplete.setVisibility(View.INVISIBLE);
             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-            binding.textViewTripStatus.setTextColor(R.color.warning);
             binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
             binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
         }
+        setMap();
     }
 
     /**
@@ -217,10 +231,15 @@ public class TripDetailsFragment extends Fragment {
                                                         public void onSuccess(Void unused) {
                                                             binding.buttonComplete.setVisibility(View.INVISIBLE);
                                                             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-                                                            binding.textViewTripStatus.setTextColor(R.color.warning);
+
                                                             binding.textViewTripStatus.setText(mTrip.tripStatus.toString());
                                                             binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance);
                                                             binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
+                                                            if (mTrip.tripStatus.equals(TripStatus.OnGoing)) {
+                                                                binding.textViewTripStatus.setTextColor(Color.parseColor("#ff9966"));
+                                                            } else {
+                                                                binding.textViewTripStatus.setTextColor(Color.GREEN);
+                                                            }
                                                         }
                                                     })
                                                     .addOnFailureListener(new OnFailureListener() {
@@ -301,6 +320,39 @@ public class TripDetailsFragment extends Fragment {
         // on FusedLocationClient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+    }
+
+
+    public void setMap() {
+        MapView mapView = (MapView) binding.getRoot().findViewById(R.id.mapView);
+        mapView.onCreate(null);
+        mapView.onResume();
+        mapView.getMapAsync(
+                new OnMapReadyCallback() {
+                    @Override
+                    public void onMapReady(GoogleMap googlemap) {
+                        final GoogleMap map = googlemap;
+
+                        MapsInitializer.initialize(getContext());
+                        //change map type as your requirements
+                        map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                        //user will see a blue dot in the map at his location
+
+                        //move the camera default animation
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mTrip.startingPoint, 8));
+                        map.addMarker(new MarkerOptions()
+                                .position(mTrip.startingPoint)
+                                .title("start"));
+                        if (mTrip.finishPoint != null) {
+                            map.addMarker(new MarkerOptions()
+                                    .position(mTrip.finishPoint)
+                                    .title("end"));
+                        }
+
+
+                    }
+                }
+        );
     }
 
     private LocationCallback mLocationCallback = new LocationCallback() {
