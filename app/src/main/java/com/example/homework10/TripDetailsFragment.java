@@ -159,6 +159,7 @@ public class TripDetailsFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     if (currentLocation != null) {
+                        fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
                         mTrip.setFinishPoint(currentLocation);
                         Request request = new Request.Builder()
                                 .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
@@ -219,7 +220,7 @@ public class TripDetailsFragment extends Fragment {
                         });
 
                     } else {
-
+                        getDeviceLocation();
                     }
                 }
             });
@@ -327,8 +328,15 @@ public class TripDetailsFragment extends Fragment {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         fusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
 
-    }
+    }    private LocationCallback mLocationCallback = new LocationCallback() {
 
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            Location mLastLocation = locationResult.getLastLocation();
+            Log.d(TAG, "onLocationResult: " + mLastLocation);
+            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+        }
+    };
 
     public void setMap() {
         MapView mapView = (MapView) binding.getRoot().findViewById(R.id.mapView);
@@ -350,15 +358,26 @@ public class TripDetailsFragment extends Fragment {
                         map.addMarker(new MarkerOptions()
                                 .position(mTrip.startingPoint)
                                 .title("start"));
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mTrip.startingPoint, 8));
+
                         if (mTrip.finishPoint != null) {
+                            map.addMarker(new MarkerOptions()
+                                    .position(mTrip.startingPoint)
+                                    .title("start"));
+
+                            double maxLong = Math.max(mTrip.startingPoint.longitude, mTrip.finishPoint.longitude);
+                            double minLong = Math.min(mTrip.startingPoint.longitude, mTrip.finishPoint.longitude);
+
+                            double maxLat = Math.max(mTrip.startingPoint.latitude, mTrip.finishPoint.latitude);
+                            double minLat = Math.min(mTrip.startingPoint.latitude, mTrip.finishPoint.latitude);
                             LatLngBounds bounds = new LatLngBounds(
-                                    mTrip.startingPoint, // SW bounds
-                                    mTrip.finishPoint  // NE bounds
+                                    new LatLng(minLat, minLong), // SW bounds
+                                    new LatLng(maxLat, maxLong)  // NE bounds
                             );
+
                             map.addMarker(new MarkerOptions()
                                     .position(mTrip.finishPoint)
                                     .title("end"));
+                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 8));
                         }
 
 
@@ -367,16 +386,7 @@ public class TripDetailsFragment extends Fragment {
         );
     }
 
-    private LocationCallback mLocationCallback = new LocationCallback() {
 
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-            requestNewLocationData();
-        }
-    };
 
 
 }
