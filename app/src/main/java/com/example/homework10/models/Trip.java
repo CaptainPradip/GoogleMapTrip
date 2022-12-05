@@ -13,20 +13,12 @@ public class Trip implements Serializable {
     public String startedAt;
     public String completedAt;
     public TripStatus tripStatus;
-    public double totalTripDistance;
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+    public String totalTripDistance;
 
     public Trip() {
     }
 
-    public Trip(String id, String tripName, LatLng startingPoint, LatLng finishPoint, String startedAt, String completedAt, TripStatus tripStatus, double totalTripDistance) {
+    public Trip(String id, String tripName, LatLng startingPoint, LatLng finishPoint, String startedAt, String completedAt, TripStatus tripStatus, String totalTripDistance) {
         this.id = id;
         this.tripName = tripName;
         this.startingPoint = startingPoint;
@@ -35,6 +27,14 @@ public class Trip implements Serializable {
         this.completedAt = completedAt;
         this.tripStatus = tripStatus;
         this.totalTripDistance = totalTripDistance;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public LatLng getStartingPoint() {
@@ -93,11 +93,11 @@ public class Trip implements Serializable {
         this.tripStatus = tripStatus;
     }
 
-    public double getTotalTripDistance() {
+    public String getTotalTripDistance() {
         return totalTripDistance;
     }
 
-    public void setTotalTripDistance(double totalTripDistance) {
+    public void setTotalTripDistance(String totalTripDistance) {
         this.totalTripDistance = totalTripDistance;
     }
 

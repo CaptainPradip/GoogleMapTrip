@@ -59,11 +59,11 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     FragmentCreateTripBinding binding;
     CreateTripListener mListener;
     ActivityResultLauncher<String[]> locationPermissionRequest;
+    LatLng currentLocation;
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted;
     private Location lastKnownLocation;
-    LatLng currentLocation;
 
     public CreateTripFragment() {
         // Required empty public constructor
@@ -116,7 +116,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                     map.put("startingPoint", currentLocation);
                     map.put("finishPoint", null);
                     map.put("id", id);
-                    map.put("totalTripDistance", 0);
+                    map.put("totalTripDistance", "0 Miles");
                     map.put("userId", mAuth.getCurrentUser().getUid());
                     map.put("completedAt", "");
                     map.put("tripStatus", TripStatus.OnGoing);
@@ -138,16 +138,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                                     MyAlertDialog.show(getContext(), "Error", e.getMessage());
                                 }
                             });
-                            /*.addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-                                        mListener.closeCreateTripFragment();
-                                    } else {
-                                        MyAlertDialog.show(getContext(), "Error", task.getException().getMessage());
-                                    }
-                                }
-                            });*/
+
                 }
             }
         });
@@ -159,18 +150,7 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
                              Bundle savedInstanceState) {
         binding = FragmentCreateTripBinding.inflate(inflater, container, false);
         return binding.getRoot();
-    }    private LocationCallback mLocationCallback = new LocationCallback() {
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            Location mLastLocation = locationResult.getLastLocation();
-            Log.d(TAG, "onLocationResult: " + mLastLocation);
-            binding.textViewLoadingStatus.setText("Success");
-            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
-            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
-            getDeviceLocation();
-        }
-    };
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -256,7 +236,18 @@ public class CreateTripFragment extends Fragment implements OnMapReadyCallback {
     private boolean isLocationEnabled() {
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-    }
+    }    private LocationCallback mLocationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            Location mLastLocation = locationResult.getLastLocation();
+            Log.d(TAG, "onLocationResult: " + mLastLocation);
+            binding.textViewLoadingStatus.setText("Success");
+            binding.textViewLoadingStatus.setTextColor(Color.GREEN);
+            fusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+            getDeviceLocation();
+        }
+    };
 
     @SuppressLint("MissingPermission")
     private void requestNewLocationData() {

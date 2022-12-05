@@ -17,6 +17,7 @@ import com.example.homework10.databinding.FragmentTripsBinding;
 import com.example.homework10.models.Trip;
 import com.example.homework10.models.TripStatus;
 import com.example.homework10.models.User;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -25,6 +26,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -100,12 +102,14 @@ public class TripsFragment extends Fragment {
                             trip.setUserId(documentSnapshot.getString("userId"));
                             trip.tripStatus = documentSnapshot.getString("tripStatus").equals(TripStatus.Completed) ?
                                     TripStatus.Completed : TripStatus.OnGoing;
-                            //trip.setStartingPoint((LatLng) documentSnapshot.get("startingPoint"));
-                            //trip.setFinishPoint((LatLng) documentSnapshot.get("finishPoint"));
+                            HashMap<String, Double> map = (HashMap<String, Double>) documentSnapshot.get("startingPoint");
+                            LatLng startingPoint = new LatLng(map.get("latitude"), map.get("longitude"));
+                            trip.setStartingPoint(startingPoint);
+                            trip.setFinishPoint((LatLng) documentSnapshot.get("finishPoint"));
                             trip.setStartedAt(documentSnapshot.getString("startedAt"));
                             trip.setCompletedAt(documentSnapshot.getString("completedAt"));
                             trip.setTripName(documentSnapshot.getString("tripName"));
-                            //trip.setTotalTripDistance(documentSnapshot.getDouble("totalTripDistance"));
+                            trip.setTotalTripDistance(documentSnapshot.getDouble("totalTripDistance"));
 
                             trips.add(trip);
                         }

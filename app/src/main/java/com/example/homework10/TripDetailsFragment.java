@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.homework10.databinding.FragmentTripDetailsBinding;
+import com.example.homework10.models.APIResponse;
 import com.example.homework10.models.Trip;
 import com.example.homework10.models.TripStatus;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -42,11 +43,19 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.gson.Gson;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.UUID;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -62,6 +71,7 @@ public class TripDetailsFragment extends Fragment {
     FirebaseAuth mAuth = FirebaseAuth.getInstance();
     FragmentTripDetailsBinding binding;
     ActivityResultLauncher<String[]> locationPermissionRequest;
+    OkHttpClient client = new OkHttpClient();
     // TODO: Rename and change types of parameters
     private Trip mTrip;
     // The entry point to the Fused Location Provider.
@@ -124,10 +134,12 @@ public class TripDetailsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    @SuppressLint("ResourceAsColor")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         getActivity().setTitle("TripDetailsFragment");
+        Log.d(TAG, "onResponse: " + mTrip);
         binding.textViewCompletedAt.setText(mTrip.getCompletedAt());
         binding.textViewStartedAt.setText(mTrip.startedAt);
         binding.textViewTripName.setText(mTrip.tripName);
@@ -145,7 +157,7 @@ public class TripDetailsFragment extends Fragment {
         } else {
             binding.buttonComplete.setVisibility(View.INVISIBLE);
             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-            binding.textViewTripStatus.setTextColor(Color.GREEN);
+            binding.textViewTripStatus.setTextColor(R.color.warning);
             binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance + " Miles");
         }
     }
@@ -175,33 +187,55 @@ public class TripDetailsFragment extends Fragment {
                                     LatLng currentLocation = new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude());
                                     Log.d(TAG, "onComplete: " + currentLocation);
-                                    HashMap<String, Object> map = new HashMap<>();
-                                    String id = UUID.randomUUID().toString();
-                                    // public LatLng startingPoint;
-                                    // public LatLng finishPoint;
-                                    map.put("id", id);
-                                    float[] result = new float[2];
-                                    Location.distanceBetween(mTrip.startingPoint.latitude, mTrip.startingPoint.longitude, currentLocation.latitude, currentLocation.longitude, result);
 
-                                    map.put("totalTripDistance", "");
-                                    map.put("tripStatus", TripStatus.Completed);
-                                    LocalDateTime localDateTime = LocalDateTime.now();
-                                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
-                                    String dateTime = localDateTime.format(formatter);
-                                    map.put("completedAt", dateTime);
-                                    db.collection("trips").document(mTrip.getId()).update(map)
-                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void unused) {
+                                    Request request = new Request.Builder()
+                                            .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
+                                                    "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=AIzaSyBR1j8UNQfUsAaSGeWpEsrXR1adovoB-Mc")
+                                            .get()
+                                            .build();
+                                    client.newCall(request).enqueue(new Callback() {
+                                        @Override
+                                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
 
-                                                }
-                                            })
-                                            .addOnFailureListener(new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    MyAlertDialog.show(getContext(), "Error", e.getMessage());
-                                                }
-                                            });
+                                        }
+
+                                        @Override
+                                        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                            Gson gson = new Gson();
+                                            APIResponse distanceResp = gson.fromJson(response.body().charStream(), APIResponse.class);
+
+
+                                            HashMap<String, Object> map = new HashMap<>();
+                                            String id = UUID.randomUUID().toString();
+
+                                            // public LatLng startingPoint;
+                                            // public LatLng finishPoint;
+                                            map.put("id", id);
+                                            map.put("finishPoint", currentLocation);
+                                            map.put("totalTripDistance", distanceResp.getRoutes().get(0).legs.get(0).distance.text);
+                                            map.put("tripStatus", TripStatus.Completed);
+                                            LocalDateTime localDateTime = LocalDateTime.now();
+                                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
+                                            String dateTime = localDateTime.format(formatter);
+                                            map.put("completedAt", dateTime);
+                                            Log.d(TAG, "onResponse: " + mTrip);
+                                            db.collection("trips").document(mTrip.getId()).update(map)
+                                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                        @Override
+                                                        public void onSuccess(Void unused) {
+
+                                                        }
+                                                    })
+                                                    .addOnFailureListener(new OnFailureListener() {
+                                                        @Override
+                                                        public void onFailure(@NonNull Exception e) {
+                                                            MyAlertDialog.show(getContext(), "Error", e.getMessage());
+                                                        }
+                                                    });
+                                        }
+                                    });
+
+
                                     // Update Trip Api Fire Base
                                 } else {
                                     requestNewLocationData();

@@ -60,8 +60,7 @@ public class TripsListViewAdapter extends ArrayAdapter<Trip> {
 
         if (trip.tripStatus.equals(TripStatus.OnGoing))
             viewHolder.textViewCompletedAt.setText("N/A");
-        else
-            viewHolder.textViewCompletedAt.setText(trip.completedAt);
+        else viewHolder.textViewCompletedAt.setText(trip.completedAt);
         viewHolder.textViewTripStatus.setText(trip.tripStatus.name());
         viewHolder.textViewTotalTripDistance.setText(trip.totalTripDistance + " Miles");
 
