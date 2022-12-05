@@ -134,7 +134,7 @@ public class TripDetailsFragment extends Fragment {
         binding.textViewTripStatus.setText(mTrip.tripStatus.name());
         if (!mTrip.tripStatus.equals(TripStatus.Completed)) {
             binding.buttonComplete.setVisibility(View.VISIBLE);
-            binding.textViewTripStatus.setTextColor(Color.GREEN);
+            binding.textViewTripStatus.setTextColor(Color.YELLOW);
             binding.textViewTotalTripDistance.setVisibility(View.INVISIBLE);
             binding.buttonComplete.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -145,7 +145,7 @@ public class TripDetailsFragment extends Fragment {
         } else {
             binding.buttonComplete.setVisibility(View.INVISIBLE);
             binding.textViewTotalTripDistance.setVisibility(View.VISIBLE);
-            binding.textViewTripStatus.setTextColor(Color.YELLOW);
+            binding.textViewTripStatus.setTextColor(Color.GREEN);
             binding.textViewTotalTripDistance.setText(mTrip.totalTripDistance + " Miles");
         }
     }

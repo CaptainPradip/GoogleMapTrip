@@ -92,6 +92,7 @@
         app:cameraTargetLng="150.922433"
         app:cameraTilt="30"
         app:cameraZoom="13"
+        app:layout_constraintTop_toBottomOf="@+id/buttonComplete"
         app:mapType="normal"
         app:uiCompass="false"
         app:uiRotateGestures="true"
@@ -100,8 +101,7 @@
         app:uiZoomControls="true"
         app:uiZoomGestures="true"
         tools:ignore="MissingConstraints"
-        tools:layout_editor_absoluteX="4dp"
-        tools:layout_editor_absoluteY="187dp" />
+        tools:layout_editor_absoluteX="4dp" />
 
     <Button
         android:id="@+id/buttonComplete"
