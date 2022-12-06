@@ -223,11 +223,17 @@ public class TripDetailsFragment extends Fragment {
                                             String id = UUID.randomUUID().toString();
                                             map.put("id", id);
                                             map.put("finishPoint", currentLocation);
-                                            String totalTripDistance = distanceResp.getRoutes().get(0).legs.get(0).distance.text;
-                                            map.put("totalTripDistance", totalTripDistance);
+                                            if (distanceResp.getRoutes().size() > 0) {
+                                                String totalTripDistance = distanceResp.getRoutes().get(0).legs.get(0).distance.text;
+                                                map.put("totalTripDistance", totalTripDistance);
+                                                mTrip.totalTripDistance = totalTripDistance;
+                                            } else {
+                                                map.put("totalTripDistance", "No Routes Found!!!");
+                                                mTrip.totalTripDistance = "No Routes Found!!!";
+                                            }
                                             map.put("tripStatus", TripStatus.Completed);
                                             mTrip.tripStatus = TripStatus.Completed;
-                                            mTrip.totalTripDistance = totalTripDistance;
+
                                             LocalDateTime localDateTime = LocalDateTime.now();
                                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
                                             String dateTime = localDateTime.format(formatter);
