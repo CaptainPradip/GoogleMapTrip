@@ -205,7 +205,7 @@ public class TripDetailsFragment extends Fragment {
                                     mTrip.setFinishPoint(currentLocation);
                                     Request request = new Request.Builder()
                                             .url("https://maps.googleapis.com/maps/api/directions/json?origin=" + +mTrip.startingPoint.latitude + "," + mTrip.startingPoint.longitude +
-                                                    "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=AIzaSyBR1j8UNQfUsAaSGeWpEsrXR1adovoB-Mc")
+                                                    "&destination=" + currentLocation.latitude + "," + currentLocation.longitude + "&mode=driving&key=")
                                             .get()
                                             .build();
                                     client.newCall(request).enqueue(new Callback() {
